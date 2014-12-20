@@ -1,0 +1,3 @@
+This file describes the process of cleaning up the data for this project
+
+First the tables X_test.txt 
