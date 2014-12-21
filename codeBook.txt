@@ -1,3 +1,14 @@
 This file describes the process of cleaning up the data for this project
 
-First the tables X_test.txt 
+First the tables X_test.txt and subject_test.txt are loaded as tables
+Then only the relevant variables (the ones with standard deviation or mean) are selected into a new table
+
+The same process happens with the tables X_train.txt and subject_train.txt
+
+The column in the subject tables becomes the first column in a new table, where the other data already resides. This is done with the rbind command
+
+All columns are given meaningful names
+
+Then the test and training data are merged into a new table, this is done with the command cbind.
+
+Finally a new table tidyData is created which contains the means of all the mean variables per subject. 
