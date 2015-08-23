@@ -1,134 +1,52 @@
-setwd("UCI HAR Dataset/test")
-# Read Test table into te1
+# Go to the diretory UCI Har Dataset. I assume we are in a directory above
+# Read features file in order to exclude all observations not containing the
+# word mean or std
+setwd("UCI HAR Dataset")
+feat = read.table("features.txt", header=F)
+mean_vec = sapply(feat$V2, function(x) length(grep("mean",x,ignore.case=T)) > 0)
+std_vec = sapply(feat$V2, function(x) length(grep("std",x,ignore.case=T)) > 0 )
+
+# Go to test dataset and read the test dataset
+setwd("test")
 te1 <- read.table("X_test.txt", header=FALSE,sep="")
+names (te1) <- feat$V2
+te1 <- te1[,feat[mean_vec|std_vec,]$V1]
+tey <- read.table("y_test.txt", header = FALSE, sep="")
+
 # Read subject file into tes
 tes <- read.table("subject_test.txt", header=FALSE, sep="")
-# Select only columns with mean and standard deviation
-te2 <- te1[,c(1:6,41:46,81:86,121:126,161:166,201:202, 214:215, 227:228, 240:241, 253:254, 266:271
-              , 345:350, 424:429, 503:504, 516:517, 529:530, 542:543 )]
+
 # Same for training data
 setwd("../train")
 tr1 <- read.table("X_train.txt", header=FALSE,sep="")
+names(tr1) <- feat$V2
 trs <- read.table("subject_train.txt", header=FALSE, sep="")
-tr2 <- tr1[,c(1:6,41:46,81:86,121:126,161:166,201:202, 214:215, 227:228, 240:241, 253:254, 266:271
-            , 345:350, 424:429, 503:504, 516:517, 529:530, 542:543 )]
-            
+tr1 <- tr1[,feat[mean_vec|std_vec,]$V1]
+tr_y <- read.table("y_train.txt", header = FALSE, sep="")
+setwd("..")
+
 # Join test and training data
-t2 <- rbind(te2, tr2)
-ts <- rbind(tes, trs)
+alldata<- rbind(te1, tr1)
+allsubs <- rbind(tes, trs)
+ally <- rbind (tey, tr_y)
 
 # Set column names
-names(ts) <- c("Subject")
+names(allsubs) <- c("Subject")
 
-names(t2) <- c('tBodyAccMeanX'
-               , 'tBodyAccMeanY' 
-               , 'tBodyAccMeanZ'
-               , 'tBodyAccSTDX'
-               , 'tBodyAccSTDY'
-               , 'tBodyAccSTDZ'
-               , 'tGravityAccMeanX'
-               , 'tGravityAccMeanY'
-               , 'tGravityAccMeanZ'
-               , 'tGravityAccSTDX'
-               , 'tGravityAccSTDY'
-               , 'tGravityAccSTDZ'
-               , 'tBodyAccJerkMeanX'
-               , 'tBodyAccJerkMeanY'
-               , 'tBodyAccJerkMeanZ'
-               , 'tBodyAccJerkSTDX'
-               , 'tBodyAccJerkSTDY'
-               , 'tBodyAccJerkSTDZ'
-               , 'tBodyGyroMeanX'
-               , 'tBodyGyroMeanY'
-               , 'tBodyGyroMeanZ'
-               , 'tBodyGyroSTDX'
-               , 'tBodyGyroSTDY'
-               , 'tBodyGyroSTDZ'
-               , 'tBodyGyroJerkMeanX'
-               , 'tBodyGyroJerkMeanY'
-               , 'tBodyGyroJerkMeanZ'
-               , 'tBodyGyroJerkSTDX'
-               , 'tBodyGyroJerkSTDY'
-               , 'tBodyGyroJerkSTDZ'
-               , 'tBodyAccMagMean'
-               , 'tBodyAccMagStd'
-               , 'tGravityAccMagMean'
-               , 'tGravityAccMagStd'
-               , 'tBodyAccJerkMagMean'
-               , 'tBodyAccJerkMagStd'
-               , 'tBodyGyroMagMean'
-               , 'tBodyGyroMagStd'
-               , 'tBodyGyroJerkMagMean'
-               , 'tBodyGyroJerkMagStd'
-               , 'fBodyAccMeanX'
-               , 'fBodyAccMeanY'
-               , 'fBodyAccMeanZ'
-               , 'fBodyAccSTDX'
-               , 'fBodyAccSTDY'
-               , 'fBodyAccSTDZ'
-               , 'fBodyAccJerkMeanX'
-               , 'fBodyAccJerkMeanY'
-               , 'fBodyAccJerkMeanZ'
-               , 'fBodyAccJerkSTDX'
-               , 'fBodyAccJerkSTDY'
-               , 'fBodyAccJerkSTDZ'
-               , 'fBodyGyroMeanX'
-               , 'fBodyGyroMeanY'
-               , 'fBodyGyroMeanZ'
-               , 'fBodyGyroSTDX'
-               , 'fBodyGyroSTDY'
-               , 'fBodyGyroSTDZ'
-               , 'fBodyAccMagMean'
-               , 'fBodyAccMagStd'
-               , 'fBodyBodyAccJerkMagMean'
-               , 'fBodyBodyAccJerkMagStd'
-               , 'fBodyBodyGyroMagMean'
-               , 'fBodyBodyGyroMagStd'
-               , 'fBodyBodyGyroJerkMagMean'
-               , 'fBodyBodyGyroJerkMagStd')
 
+ally$activity[ally$V1 == 1] <- "WALKING"
+ally$activity[ally$V1 == 2] <- "WALKING_UPSTAIRS"
+ally$activity[ally$V1 == 3] <- "WALKING_DOWNSTAIRS"
+ally$activity[ally$V1 == 4] <- "SITTING"
+ally$activity[ally$V1 == 5] <- "STANDING"
+ally$activity[ally$V1 == 6] <- "LAYING"
 
 # Join subject and test data into 1 data frame
 
-newData <- cbind(ts, t2)
+all <- cbind(allsubs, ally$activity, alldata)
+colnames(all)[2] <- "activity"
 
-# Calculate means per subject for all the "mean" variables (not the standard deviations)
 
-tidyData <- ddply(newData,~Subject,summarise,BodyAccMeanX=mean(tBodyAccMeanX)
-                  ,BodyAccMeanY=mean(tBodyAccMeanY)
-                  , tBodyAccMeanZ=mean(tBodyAccMeanZ)
-                  , tGravityAccMeanX=mean(tGravityAccMeanX)
-                  , tGravityAccMeanY=mean(tGravityAccMeanY)
-                  , tGravityAccMeanZ=mean(tGravityAccMeanZ)
-                  , tBodyAccJerkMeanX=mean(tBodyAccJerkMeanX)
-                  , tBodyAccJerkMeanY=mean(tBodyAccJerkMeanY)
-                  , tBodyAccJerkMeanZ=mean(tBodyAccJerkMeanZ)
-                  , tBodyGyroMeanX=mean(tBodyGyroMeanX)
-                  , tBodyGyroMeanY=mean(tBodyGyroMeanY)
-                  , tBodyGyroMeanZ=mean(tBodyGyroMeanZ)
-                  , tBodyGyroJerkMeanX=mean(tBodyGyroJerkMeanX)
-                  , tBodyGyroJerkMeanY=mean(tBodyGyroJerkMeanY)
-                  , tBodyGyroJerkMeanZ=mean(tBodyGyroJerkMeanZ)
-                  , tBodyAccMagMean=mean(tBodyAccMagMean)
-                  , tGravityAccMagMean=mean(tGravityAccMagMean)
-                  , tBodyAccJerkMagMean=mean(tBodyAccJerkMagMean)
-                  , tBodyGyroMagMean=mean(tBodyGyroMagMean)
-                  , tBodyGyroJerkMagMean=mean(tBodyGyroJerkMagMean)
-                  , fBodyAccMeanX=mean(fBodyAccMeanX)
-                  , fBodyAccMeanY=mean(fBodyAccMeanY)
-                  , fBodyAccMeanZ=mean(fBodyAccMeanZ)
-                  , fBodyAccSTDX=mean(fBodyAccSTDX)
-                  , fBodyAccSTDY=mean(fBodyAccSTDY)
-                  , fBodyAccSTDZ=mean(fBodyAccSTDZ)
-                  , fBodyAccJerkMeanX=mean(fBodyAccJerkMeanX)
-                  , fBodyAccJerkMeanY=mean(fBodyAccJerkMeanY)
-                  , fBodyAccJerkMeanZ=mean(fBodyAccJerkMeanZ)
-                  , fBodyGyroMeanX=mean(fBodyGyroMeanX)
-                  , fBodyGyroMeanY=mean(fBodyGyroMeanY)
-                  , fBodyGyroMeanZ=mean(fBodyGyroMeanZ)
-                  , fBodyAccMagMean=mean(fBodyAccMagMean)
-                  , fBodyAccMagStd=mean(fBodyAccMagStd)
-                  , fBodyBodyAccJerkMagMean=mean(fBodyBodyAccJerkMagMean)
-                  , fBodyBodyGyroMagMean=mean(fBodyBodyGyroMagMean)
-                  , fBodyBodyGyroJerkMagMean=mean(fBodyBodyGyroJerkMagMean)
-)
+tidyData <- aggregate(all[,3:NCOL(all)], list(subject = all$Subject, activity = all$activity), mean )
+
+write.table(tidyData, "tidydata.txt", row.names=FALSE, quote=FALSE)
